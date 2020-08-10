@@ -6,20 +6,16 @@ import  time
 import base64
 import plotly.graph_objs as go
 import numpy as np
+import limpeza
 
 #carrega logo do empresa
 image = Image.open('logo-grupo-sococo.png')
 st.image(image,width=700 , caption='Cálculo de Refeições Extras')
 
-#variaveis de arquivo saida
-primeira_limpeza = "primeira_limpeza.txt"
-segunda_limpeza = "segunda_limpeza.txt"
+#st.set_option('deprecation.showfileUploaderEncoding', False)
+empresa = st.selectbox("Selecione a empresa",
+                ('SOCOCO', 'ACQUA', 'AMAFIBRA'))
 
-#busca para limpeza
-search_for = '21'
-search_for2 = "SOCOCO"
-
-st.set_option('deprecation.showfileUploaderEncoding', False)
 #recebe o arquivo de texto do usuário
 uploaded_file = st.file_uploader("Selecione ou arraste seu arquivo gerado pelo TSA: ",
                                  type="txt", encoding="windows-1252")
@@ -30,25 +26,14 @@ if uploaded_file is not None:
 # se o arquivo foi carregado, le o arquivo e gera um novo arquivo formatado
     data = pd.read_fwf(uploaded_file, widths=colunas, header=None)
     data.to_csv('arquivo_sem_tratamento.txt', index=False)
-    # st.write(data)
 
-# Inicia a primeira limpeza do arquivo gerado acima.
-# Gera um novo aquivo com a primeira limpeza concluida.
-    with open(primeira_limpeza, 'w', encoding="windows-1252") as out_f:
-        with open('arquivo_sem_tratamento.txt', "r") as in_f:
-            for line in in_f:
-                if search_for in line:
-                    out_f.write(line)
-
-# Inicia a segunda limpeza do arquivo gerado acima.
-# Gera o arquivo final limpo
-    with open(segunda_limpeza, 'w', encoding="windows-1252") as out_f:
-        with open('primeira_limpeza.txt', "r", encoding="windows-1252") as in_f:
-            for line in in_f:
-                if search_for2 in line:
-                    pass
-                else:
-                  out_f.write(line)
+    # Inicia a primeira limpeza do arquivo gerado acima.
+    if empresa == 'SOCOCO':
+        limpeza.limpeza_sococo()
+    elif empresa == 'ACQUA':
+        limpeza.limpeza_acqua()
+    else:
+        limpeza.limpeza_amafibra()
 
 #carrega arquivo da segunda limpeza e gera o arquivo final limpo para mostrar na tela
     df = pd.read_csv('segunda_limpeza.txt', sep=',')
@@ -57,36 +42,25 @@ if uploaded_file is not None:
 
     with st.spinner('Aguarde o carregamento do arquivo...'):
         time.sleep(5)
-    #st.success('Concluido!')
-    #st.write(df)
-    #st.write("Linha / Colunas: ", df.shape)
 
-
-    if st.checkbox('Desconto por Funcionário'):
-        #hora_inicial = st.sidebar.text_input('Hora inicial', '06:00')
-        #hora_final = st.sidebar.text_input('Hora final', '08:00')
-
-        #filtro_hora = df.loc[(df['Hora'] >= hora_inicial) & (df['Hora']<= hora_final)]
-        #st.write(filtro_hora)
-        #st.write("Linha / Colunas: ",filtro_hora.shape)
-
-        #inicio de novo tratamento e criacao de novas colunas
-
-        #trasnformar categoria REFEICAO para fator (ALMOÇO - 0/1	CAFE- 0/1	CEIA- 0/1	JANTAR- 0/1	LANCHE- 0/1)
+    if st.checkbox('Base de Refeição Tratada'):
+        #trasnformar categoria REFEICAO para fator
+        #(ALMOÇO - 0/1	CAFE- 0/1	CEIA- 0/1	JANTAR- 0/1	LANCHE- 0/1)
         filtro_ref = pd.get_dummies(df['Refeicao'])
+        filtro_ref.columns=['ALMOCO','CAFE','CEIA','JANTAR','LANCHE']
         #concatena df inicial com novas colunas geradas pelo fator
         novo_df = pd.concat([df, filtro_ref], axis=1, sort=False)
 
         #remove as colunas (Empresa , Hora , Refeicao) para melhor visualizacao
         novo_df2 = novo_df.drop(columns=['Empresa','Hora','Refeicao'])
+        #Cria a base para gerar o relatorio diario
+        relatorio_diario = novo_df.drop(columns=['Empresa','Matricula','Funcionario','Hora','Refeicao'])
+        relatorio_diario = relatorio_diario.groupby(['Data']).sum()
+        relatorio_diario = relatorio_diario.reset_index(level=['Data'])
 
         # criar indice para agrupar refeicoes por dia
         # 'estilo' contador para adiconar preco diferente
         mat_dia = novo_df2.groupby(['Matricula','Funcionario','Data']).sum()
-
-        #adiciona novas colunas para visualização
-        # mat_dia['VALOR_FUN'] = 0
-        # mat_dia['VALOR_INT'] = 0
 
 
 #----------------------------------------------------------#
@@ -120,24 +94,24 @@ if uploaded_file is not None:
 
         # lista de condicoes para desconto
         conditions = [
-            (mat_dia['ALMOÇO'] == 1) & (mat_dia['CEIA'] == 0) & (mat_dia['JANTAR'] == 0),
-            (mat_dia['ALMOÇO'] == 1) & (mat_dia['CEIA'] == 1) & (mat_dia['JANTAR'] == 1),
-            (mat_dia['ALMOÇO'] == 1) & (mat_dia['CEIA'] == 1) & (mat_dia['JANTAR'] == 0),
-            (mat_dia['ALMOÇO'] == 1) & (mat_dia['CEIA'] == 0) & (mat_dia['JANTAR'] == 1),
-            (mat_dia['ALMOÇO'] > 1) & (mat_dia['CEIA'] == 0) & (mat_dia['JANTAR'] == 0),
-            (mat_dia['ALMOÇO'] > 1) & (mat_dia['CEIA'] != 0) | (mat_dia['JANTAR'] != 0),
-            (mat_dia['ALMOÇO'] == 0) & (mat_dia['CEIA'] != 0) | (mat_dia['JANTAR'] != 0)]
+            (mat_dia['ALMOCO'] == 1) & (mat_dia['CEIA'] == 0) & (mat_dia['JANTAR'] == 0),
+            (mat_dia['ALMOCO'] == 1) & (mat_dia['CEIA'] == 1) & (mat_dia['JANTAR'] == 1),
+            (mat_dia['ALMOCO'] == 1) & (mat_dia['CEIA'] == 1) & (mat_dia['JANTAR'] == 0),
+            (mat_dia['ALMOCO'] == 1) & (mat_dia['CEIA'] == 0) & (mat_dia['JANTAR'] == 1),
+            (mat_dia['ALMOCO'] > 1) & (mat_dia['CEIA'] == 0) & (mat_dia['JANTAR'] == 0),
+            (mat_dia['ALMOCO'] > 1) & (mat_dia['CEIA'] != 0) | (mat_dia['JANTAR'] != 0),
+            (mat_dia['ALMOCO'] == 0) & (mat_dia['CEIA'] != 0) | (mat_dia['JANTAR'] != 0)]
         # escolhas de acordo com a lista de desconto ocorrida
         choices = [0.0,
-                   (mat_dia['ALMOÇO'] * 8.85 + mat_dia['CEIA'] * 8.85 + mat_dia['JANTAR'] * 8.85) - 8.85,
-                   (mat_dia['ALMOÇO'] * 8.85 + mat_dia['CEIA'] * 8.85 + mat_dia['JANTAR'] * 8.85) - 8.85,
-                   (mat_dia['ALMOÇO'] * 8.85 + mat_dia['CEIA'] * 8.85 + mat_dia['JANTAR'] * 8.85) - 8.85,
-                   (mat_dia['ALMOÇO'] * 8.85) - 8.85,
-                   (mat_dia['ALMOÇO'] * 8.85 + mat_dia['CEIA'] * 8.85 + mat_dia['JANTAR'] * 8.85) - 8.85,
-                   (mat_dia['ALMOÇO'] * 0 + mat_dia['CEIA'] * 8.85 + mat_dia['JANTAR'] * 8.85) - 8.85]
+                   (mat_dia['ALMOCO'] * 8.85 + mat_dia['CEIA'] * 8.85 + mat_dia['JANTAR'] * 8.85) - 8.85,
+                   (mat_dia['ALMOCO'] * 8.85 + mat_dia['CEIA'] * 8.85 + mat_dia['JANTAR'] * 8.85) - 8.85,
+                   (mat_dia['ALMOCO'] * 8.85 + mat_dia['CEIA'] * 8.85 + mat_dia['JANTAR'] * 8.85) - 8.85,
+                   (mat_dia['ALMOCO'] * 8.85) - 8.85,
+                   (mat_dia['ALMOCO'] * 8.85 + mat_dia['CEIA'] * 8.85 + mat_dia['JANTAR'] * 8.85) - 8.85,
+                   (mat_dia['ALMOCO'] * 0 + mat_dia['CEIA'] * 8.85 + mat_dia['JANTAR'] * 8.85) - 8.85]
 
         #soma de valores na coluna DESCONTAR
-        mat_dia['NUM_REFEICOES'] = mat_dia['ALMOÇO'] + mat_dia['CAFE']+ mat_dia['CEIA']+ \
+        mat_dia['NUM_REFEICOES'] = mat_dia['ALMOCO'] + mat_dia['CAFE']+ mat_dia['CEIA']+ \
                                mat_dia['JANTAR']+ mat_dia['LANCHE']
 
         mat_dia['DESCONTO_1'] = calculo_cafe + calculo_lanche
@@ -146,20 +120,33 @@ if uploaded_file is not None:
         st.write(mat_dia)
         st.write("Linha / Colunas: ", mat_dia.shape)
 
+        st.markdown('Quantidade de Refeições Diária ')
+        st.write(relatorio_diario)
+        st.write("Linha / Colunas: ", relatorio_diario.shape)
+
         # Filtro para saber quem teve refeicoes em excesso.
-        filtrado = mat_dia.loc[(mat_dia['NUM_REFEICOES'] >= 3) | (mat_dia['ALMOÇO']==2) |(mat_dia['CAFE']==2) |
+        filtrado = mat_dia.loc[(mat_dia['NUM_REFEICOES'] >= 3) | (mat_dia['ALMOCO']==2) |(mat_dia['CAFE']==2) |
                                (mat_dia['CEIA']==2) |  (mat_dia['JANTAR']==2) | (mat_dia['LANCHE']==2) ]
 
         filtrado['DESCONTO_TOTAL'] = mat_dia['DESCONTO_1'] + mat_dia['DESCONTO_2']
         filtrado.DESCONTO_2 = filtrado.DESCONTO_2.round(2)
         filtrado.DESCONTO_TOTAL = filtrado.DESCONTO_TOTAL.round(2)
 
-        st.markdown('Refeições EXTRA por funcionário')
+        st.markdown('Relação de Funcionário com Refeições EXTRAS')
         st.write(filtrado)
         st.write("Linha / Colunas: ", filtrado.shape)
 
+
+        #Organizando para contacter base de dados tratato
+        base_tratada = filtrado.reset_index(level=['Matricula', 'Funcionario', 'Data'])
+        base_tratada = pd.concat([base_tratada, df, relatorio_diario], ignore_index=True, axis=1, sort=False)
+        base_tratada.columns = ['MATRICULA','FUNCIONARIO','DATA','ALMOCO','CAFE','CEIA',
+                               'JANTAR','LANCHE','NUM_REFEICAO','DESCONTO_1','DESCONTO_2','DESCONTO_TOTAL',
+                              'EMPRESA', 'MATRICULA','FUNCIONARIO', 'DATA', 'HORA', 'REFEICAO',
+                              'DATA','ALMOCO','CAFE','CEIA','JANTAR','LANCHE']
         #salva o arquivo em formato de texto com os INDÍCES para download
-        filtrado.to_csv('refeicoes_extras.txt')
+        base_tratada.to_csv('base_tratada.txt',index=False)
+
 
         #funcao para gerar downlod da data frame tratado
         def download_link(object_to_download, download_filename, download_link_text):
@@ -169,13 +156,13 @@ if uploaded_file is not None:
                 b64 = base64.b64encode(object_to_download.encode()).decode()
                 return f'<a href="data:file/txt;base64,{b64}" download="{download_filename}">{download_link_text}</a>'
 
-        if st.button('Download'):
-            tmp_download_link = download_link(filtrado, 'refeicoes_extras.txt', 'Clique para salvar o arquivo')
-            st.markdown(tmp_download_link, unsafe_allow_html=True)
+
+        tmp_download_link = download_link(base_tratada, 'base_tratada.txt', 'Clique para salvar o arquivo')
+        st.markdown(tmp_download_link, unsafe_allow_html=True)
 
 #----------------------------------------------------------#
         #Gráfico numero de refeicoes
-    if st.checkbox('Quantidade de Refeições'):
+    if st.checkbox('Gráfico de Quantidade de Refeições'):
         quantidade_cafe = sum((df['Refeicao']=='CAFE') )
         quantidade_almoco = sum((df['Refeicao']=='ALMOÇO') )
         quantidade_lanche = sum((df['Refeicao']=='LANCHE') )
@@ -193,7 +180,9 @@ if uploaded_file is not None:
 
         # configure_plotly_browser_state()
         trace = go.Bar(x=['Café', 'Almoço', 'Lanche', 'Janta','Ceia'],
-                       y=lista_grafico)
+                       y=lista_grafico,
+                       text=lista_grafico,
+                       textposition='auto')
 
         legenda = go.Layout(title='Quantidade de refeições por tipo',
                             xaxis={'title': 'Tipo de Refeição'},
@@ -204,9 +193,9 @@ if uploaded_file is not None:
 
 #-------------------------------------------------------------------------#
         #Gráfico de reficoes extras
-        if st.checkbox('Quantidade EXTRA de Refeições'):
+        if st.checkbox('Gráfico de Quantidade EXTRA de Refeições'):
             quantidade_cafe_filtrado = sum(filtrado['CAFE'])
-            quantidade_almoco_filtrado = sum(filtrado['ALMOÇO'])
+            quantidade_almoco_filtrado = sum(filtrado['ALMOCO'])
             quantidade_lanche_filtrado = sum(filtrado['LANCHE'])
             quantidade_janta_filtrado = sum(filtrado['JANTAR'])
             quantidade_ceia_filtrado = sum(filtrado['CEIA'])
@@ -222,7 +211,9 @@ if uploaded_file is not None:
 
             # configure_plotly_browser_state()
             trace = go.Bar(x=['Café', 'Almoço', 'Lanche', 'Janta', 'Ceia'],
-                           y=lista_grafico_filtrado)
+                           y=lista_grafico_filtrado,
+                           text=lista_grafico_filtrado,
+                           textposition='auto')
 
             legenda = go.Layout(title='Quantidade de refeições por tipo',
                                 xaxis={'title': 'Tipo de Refeição'},
