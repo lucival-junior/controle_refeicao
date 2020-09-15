@@ -118,7 +118,7 @@ if uploaded_file is not None:
         mat_dia['DESCONTO_2'] = np.select(conditions, choices, default=0.0)
         st.markdown('Refeições por funcionário')
         st.write(mat_dia)
-        st.write("Linha / Colunas: ", mat_dia.shape)
+        st.write("Linha / Colunas: ", novo_df2.shape)
 
         st.markdown('Quantidade de Refeições Diária ')
         st.write(relatorio_diario)
