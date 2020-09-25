@@ -5,7 +5,7 @@ segunda_limpeza = "segunda_limpeza.txt"
 def limpeza_sococo():
     busca_sococo_cod = '21'
     busca_sococo_emp = "SOCOCO"
-    with open(primeira_limpeza, 'w', encoding="windows-1252") as out_f:
+    with open(primeira_limpeza, 'w', encoding="ISO-8859-1") as out_f:
         with open('arquivo_sem_tratamento.txt', "r") as in_f:
             for line in in_f:
                 if busca_sococo_cod in line:
@@ -13,8 +13,8 @@ def limpeza_sococo():
 
     # Inicia a segunda limpeza do arquivo gerado acima.
     # Gera o arquivo final limpo
-    with open(segunda_limpeza, 'w', encoding="windows-1252") as out_f:
-        with open('primeira_limpeza.txt', "r", encoding="windows-1252") as in_f:
+    with open(segunda_limpeza, 'w', encoding="ISO-8859-1") as out_f:
+        with open('primeira_limpeza.txt', "r", encoding="ISO-8859-1") as in_f:
             for line in in_f:
                 if busca_sococo_emp in line:
                     pass
@@ -43,7 +43,7 @@ def limpeza_acqua():
 def limpeza_amafibra():
     busca_amafibra_cod = '30'
     busca_amafibra_emp = "AMAFIBRA"
-    with open(primeira_limpeza, 'w', encoding="windows-1252") as out_f:
+    with open(primeira_limpeza, 'w', encoding="ISO-8859-1") as out_f:
         with open('arquivo_sem_tratamento.txt', "r") as in_f:
             for line in in_f:
                 if busca_amafibra_cod in line:
@@ -51,8 +51,8 @@ def limpeza_amafibra():
 
     # Inicia a segunda limpeza do arquivo gerado acima.
     # Gera o arquivo final limpo
-    with open(segunda_limpeza, 'w', encoding="windows-1252") as out_f:
-        with open('primeira_limpeza.txt', "r", encoding="windows-1252") as in_f:
+    with open(segunda_limpeza, 'w', encoding="ISO-8859-1") as out_f:
+        with open('primeira_limpeza.txt', "r", encoding="ISO-8859-1") as in_f:
             for line in in_f:
                 if busca_amafibra_emp in line:
                     pass
