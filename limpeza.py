@@ -6,7 +6,7 @@ def limpeza_sococo():
     busca_sococo_cod = '21'
     busca_sococo_emp = "SOCOCO"
     with open(primeira_limpeza, 'w', encoding="ISO-8859-1") as out_f:
-        with open('arquivo_sem_tratamento.txt', "r") as in_f:
+        with open('arquivo_sem_tratamento.txt', "r", encoding="ISO-8859-1") as in_f:
             for line in in_f:
                 if busca_sococo_cod in line:
                     out_f.write(line)
@@ -44,7 +44,7 @@ def limpeza_amafibra():
     busca_amafibra_cod = '30'
     busca_amafibra_emp = "AMAFIBRA"
     with open(primeira_limpeza, 'w', encoding="ISO-8859-1") as out_f:
-        with open('arquivo_sem_tratamento.txt', "r") as in_f:
+        with open('arquivo_sem_tratamento.txt', "r", encoding="ISO-8859-1") as in_f:
             for line in in_f:
                 if busca_amafibra_cod in line:
                     out_f.write(line)
