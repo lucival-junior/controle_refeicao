@@ -17,7 +17,7 @@ empresa = st.selectbox("Selecione a empresa",
                 ('SOCOCO', 'ACQUA', 'AMAFIBRA'))
 
 #recebe o arquivo de texto do usuário
-uploaded_file = st.file_uploader("Selecione ou arraste seu arquivo gerado pelo TSA: ",
+uploaded_file = st.file_uploader("Selecione ou arraste seu arquivo gerado pelo DATASUL: ",
                                  type="txt", encoding="windows-1252")
 #formata o arquivo recebido em 06 colunas
 colunas = [5,11,28,12,7,7]
