@@ -36,7 +36,7 @@ if uploaded_file is not None:
         limpeza.limpeza_amafibra()
 
 #carrega arquivo da segunda limpeza e gera o arquivo final limpo para mostrar na tela
-    df = pd.read_csv('segunda_limpeza.txt', sep=',')
+    df = pd.read_csv('terceira_limpeza.txt', sep=',')
     df.columns = ['Empresa', 'Matricula', 'Funcionario', 'Data', 'Hora', 'Refeicao']
     df.to_csv('arquivo_limpo.txt', index=False)
 
