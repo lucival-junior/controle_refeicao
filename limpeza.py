@@ -25,7 +25,7 @@ def limpeza_sococo():
 def limpeza_acqua():
     busca_acqua_cod = '40'
     busca_acqua_emp = "ACQUA"
-     busca_acqua_valor = "Valor"
+    busca_acqua_valor = "Valor"
     
     with open(primeira_limpeza, 'w', encoding="ISO-8859-1") as out_f:
         with open('arquivo_sem_tratamento.txt', "r", encoding='ISO-8859-1') as in_f:
