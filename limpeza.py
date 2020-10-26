@@ -24,13 +24,13 @@ def limpeza_sococo():
                 else:
                     out_f.write(line)
                     
-     with open(terceira_limpeza, 'w', encoding="ISO-8859-1") as out_f:
-        with open('segunda_limpeza.txt', "r", encoding="ISO-8859-1") as in_f:
-            for line in in_f:
-                if busca_sococo_valor in line:
-                    pass
-                else:
-                    out_f.write(line)
+    with open(terceira_limpeza, 'w', encoding="ISO-8859-1") as out_f:
+       with open('segunda_limpeza.txt', "r", encoding="ISO-8859-1") as in_f:
+           for line in in_f:
+               if busca_sococo_valor in line:
+                   pass
+               else:
+                   out_f.write(line)
 
 def limpeza_acqua():
     busca_acqua_cod = '40'
@@ -81,10 +81,10 @@ def limpeza_amafibra():
                 else:
                   out_f.write(line)
                 
-     with open(terceira_limpeza, 'w', encoding="ISO-8859-1") as out_f:
-        with open('segunda_limpeza.txt', "r", encoding="ISO-8859-1") as in_f:
-            for line in in_f:
-                if busca_amafibra_valor in line:
-                    pass
-                else:
-                    out_f.write(line)           
+    with open(terceira_limpeza, 'w', encoding="ISO-8859-1") as out_f:
+       with open('segunda_limpeza.txt', "r", encoding="ISO-8859-1") as in_f:
+           for line in in_f:
+               if busca_amafibra_valor in line:
+                   pass
+               else:
+                   out_f.write(line)           
