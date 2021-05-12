@@ -1,16 +1,18 @@
-#importe dos pacotes
+#import dos pacotes
 import streamlit as st
 import pandas as pd
 from PIL import Image
-import  time
+import time
 import base64
 import plotly.graph_objs as go
 import numpy as np
 import limpeza
+from datetime import date
+from openpyxl.workbook import Workbook
 
 #carrega logo do empresa
 image = Image.open('logo-grupo-sococo.png')
-st.image(image,width=700 , caption='Cálculo de Refeições Extras')
+st.image(image, width=700, caption='Cálculo de Refeições Extras')
 
 #st.set_option('deprecation.showfileUploaderEncoding', False)
 empresa = st.selectbox("Selecione a empresa",
@@ -20,7 +22,7 @@ empresa = st.selectbox("Selecione a empresa",
 uploaded_file = st.file_uploader("Selecione ou arraste seu arquivo gerado pelo DATASUL: ",
                                  type="txt", encoding="windows-1252")
 #formata o arquivo recebido em 06 colunas
-colunas = [5,11,28,12,7,7]
+colunas = [5, 11, 28, 12, 7, 7]
 
 if uploaded_file is not None:
 # se o arquivo foi carregado, le o arquivo e gera um novo arquivo formatado
@@ -47,7 +49,7 @@ if uploaded_file is not None:
         #trasnformar categoria REFEICAO para fator
         #(ALMOÇO - 0/1	CAFE- 0/1	CEIA- 0/1	JANTAR- 0/1	LANCHE- 0/1)
         filtro_ref = pd.get_dummies(df['Refeicao'])
-        filtro_ref.columns=['ALMOCO','CAFE','CEIA','JANTAR','LANCHE']
+        filtro_ref.columns=['ALMOCO', 'CAFE', 'CEIA', 'JANTAR', 'LANCHE']
         #concatena df inicial com novas colunas geradas pelo fator
         novo_df = pd.concat([df, filtro_ref], axis=1, sort=False)
 
@@ -60,7 +62,7 @@ if uploaded_file is not None:
 
         # criar indice para agrupar refeicoes por dia
         # 'estilo' contador para adiconar preco diferente
-        mat_dia = novo_df2.groupby(['Matricula','Funcionario','Data']).sum()
+        mat_dia = novo_df2.groupby(['Matricula', 'Funcionario', 'Data']).sum()
 
 
 #----------------------------------------------------------#
@@ -77,6 +79,7 @@ if uploaded_file is not None:
             else:
                 return 0
         calculo_lanche = mat_dia.apply(lanche, axis=1)
+
 
         def cafe(caf):
             if (caf['LANCHE'] == 1) & (caf['CAFE'] == 0):
@@ -101,6 +104,7 @@ if uploaded_file is not None:
             (mat_dia['ALMOCO'] > 1) & (mat_dia['CEIA'] == 0) & (mat_dia['JANTAR'] == 0),
             (mat_dia['ALMOCO'] > 1) & (mat_dia['CEIA'] != 0) | (mat_dia['JANTAR'] != 0),
             (mat_dia['ALMOCO'] == 0) & (mat_dia['CEIA'] != 0) | (mat_dia['JANTAR'] != 0)]
+
         # escolhas de acordo com a lista de desconto ocorrida
         choices = [0.0,
                    (mat_dia['ALMOCO'] * 8.85 + mat_dia['CEIA'] * 8.85 + mat_dia['JANTAR'] * 8.85) - 8.85,
@@ -125,8 +129,8 @@ if uploaded_file is not None:
         st.write("Linha / Colunas: ", relatorio_diario.shape)
 
         # Filtro para saber quem teve refeicoes em excesso.
-        filtrado = mat_dia.loc[(mat_dia['NUM_REFEICOES'] >= 3) | (mat_dia['ALMOCO']==2) |(mat_dia['CAFE']==2) |
-                               (mat_dia['CEIA']==2) |  (mat_dia['JANTAR']==2) | (mat_dia['LANCHE']==2) ]
+        filtrado = mat_dia.loc[(mat_dia['NUM_REFEICOES'] >= 3) | (mat_dia['ALMOCO'] == 2) | (mat_dia['CAFE'] == 2) |
+                               (mat_dia['CEIA'] == 2) | (mat_dia['JANTAR'] == 2) | (mat_dia['LANCHE'] == 2)]
 
         filtrado['DESCONTO_TOTAL'] = mat_dia['DESCONTO_1'] + mat_dia['DESCONTO_2']
         filtrado.DESCONTO_2 = filtrado.DESCONTO_2.round(2)
@@ -137,37 +141,40 @@ if uploaded_file is not None:
         st.write("Linha / Colunas: ", filtrado.shape)
 
 
-        #Organizando para contacter base de dados tratato
+        # Organizando para contacter base de dados tratada
         base_tratada = filtrado.reset_index(level=['Matricula', 'Funcionario', 'Data'])
-        base_tratada = pd.concat([base_tratada, df, relatorio_diario], ignore_index=True, axis=1, sort=False)
-        base_tratada.columns = ['MATRICULA','FUNCIONARIO','DATA','ALMOCO','CAFE','CEIA',
-                               'JANTAR','LANCHE','NUM_REFEICAO','DESCONTO_1','DESCONTO_2','DESCONTO_TOTAL',
-                              'EMPRESA', 'MATRICULA','FUNCIONARIO', 'DATA', 'HORA', 'REFEICAO',
-                              'DATA','ALMOCO','CAFE','CEIA','JANTAR','LANCHE']
-        #salva o arquivo em formato de texto com os INDÍCES para download
-        base_tratada.to_csv('base_tratada.txt',index=False)
+
+        # Padronizando nome do arquivo com data atual e nome da empresa
+        data_atual = date.today()
+        data_pt_br = data_atual.strftime('%d-%m-%Y')
+        file_name = 'REFEICAO-' + empresa + '-' + data_pt_br + '.xlsx'
+
+        with pd.ExcelWriter(file_name) as writer:
+            base_tratada.to_excel(writer, sheet_name='BASE_TRATADA', index=False)
+            df.to_excel(writer, sheet_name='BASE_GERAL', index=False)
+            relatorio_diario.to_excel(writer, sheet_name='RELATORIO_DIARIO', index=False)
+
+        # #funcao para gerar downlod da data frametratado
+        def download_link():
+            with open(file_name, "rb") as file:
+                byte = file.read()
+                b64 = base64.b64encode(byte).decode()
+                href = f'<a href="data:file/xlsx;base64,{b64}" download="{file_name}">Salvar Arquivo</a>'
+                st.success('**Limpeza concluída!**')
+                st.markdown(href, unsafe_allow_html=True)
+
+        # chamada de funcao
+        download_link()
 
 
-        #funcao para gerar downlod da data frame tratado
-        def download_link(object_to_download, download_filename, download_link_text):
-
-            if isinstance(object_to_download, pd.DataFrame):
-                object_to_download = object_to_download.to_csv(index=True)
-                b64 = base64.b64encode(object_to_download.encode()).decode()
-                return f'<a href="data:file/txt;base64,{b64}" download="{download_filename}">{download_link_text}</a>'
-
-
-        tmp_download_link = download_link(base_tratada, 'base_tratada.txt', 'Clique para salvar o arquivo')
-        st.markdown(tmp_download_link, unsafe_allow_html=True)
-
-#----------------------------------------------------------#
+        #----------------------------------------------------------#
         #Gráfico numero de refeicoes
     if st.checkbox('Gráfico de Quantidade de Refeições'):
-        quantidade_cafe = sum((df['Refeicao']=='CAFE') )
-        quantidade_almoco = sum((df['Refeicao']=='ALMOÇO') )
-        quantidade_lanche = sum((df['Refeicao']=='LANCHE') )
-        quantidade_janta = sum((df['Refeicao']=='JANTAR') )
-        quantidade_ceia = sum((df['Refeicao']=='CEIA') )
+        quantidade_cafe = sum((df['Refeicao'] == 'CAFE'))
+        quantidade_almoco = sum((df['Refeicao'] == 'ALMOÇO'))
+        quantidade_lanche = sum((df['Refeicao'] == 'LANCHE'))
+        quantidade_janta = sum((df['Refeicao'] == 'JANTAR'))
+        quantidade_ceia = sum((df['Refeicao'] == 'CEIA'))
 
         lista_grafico = [quantidade_cafe, quantidade_almoco,
                         quantidade_lanche, quantidade_janta,
